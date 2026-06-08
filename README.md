@@ -3,6 +3,8 @@
 **Desenvolvido por:** Leandro Ferreira  
 **Acesso:** http://api.guardiao.lan  
 **Stack:** Node.js + Express + SQLite + Docker  
+> 📥 **[Clique aqui para baixar o projeto (ZIP)](https://github.com/lfeletronADS/http-api-lab/raw/main/http-api-lab.zip)**
+
 
 ---
 
