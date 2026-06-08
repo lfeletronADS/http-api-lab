@@ -1,7 +1,43 @@
-CREATE DATABASE IF NOT EXISTS api_educativa_db;
-USE api_educativa_db;
+-- ============================================================
+-- HTTP API Lab — Estrutura do Banco de Dados (SQLite)
+-- ============================================================
+-- ATENÇÃO: Este arquivo é apenas para REFERÊNCIA educativa.
+-- As tabelas são criadas AUTOMATICAMENTE pelo server.js
+-- na primeira execução. Não é necessário rodar este SQL.
+-- ============================================================
 
-CREATE TABLE IF NOT EXISTS pessoas (id INT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(100), idade INT, cpf VARCHAR(20), cidade VARCHAR(100), criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS carros (id INT AUTO_INCREMENT PRIMARY KEY, marca VARCHAR(100), modelo VARCHAR(100), ano INT, cor VARCHAR(50), criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS casas (id INT AUTO_INCREMENT PRIMARY KEY, endereco VARCHAR(255), bairro VARCHAR(100), valor DECIMAL(10,2), vagas INT, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS cachorros (id INT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(100), raca VARCHAR(100), idade INT, dono VARCHAR(100), criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS pessoas (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome      TEXT,
+    idade     INTEGER,
+    cpf       TEXT,
+    cidade    TEXT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS carros (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    marca     TEXT,
+    modelo    TEXT,
+    ano       INTEGER,
+    cor       TEXT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS casas (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    endereco  TEXT,
+    bairro    TEXT,
+    valor     REAL,
+    vagas     INTEGER,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cachorros (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome      TEXT,
+    raca      TEXT,
+    idade     INTEGER,
+    dono      TEXT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
