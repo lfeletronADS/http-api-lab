@@ -1,40 +1,66 @@
 ❗❗ ATENÇÃO: NÃO EXECUTE NADA DENTRO DO ZIP ❗❗
-Você DEVE clicar com o botão direito no arquivo baixado e 
-escolher "Extrair Tudo" antes de começar. 
+Você DEVE clicar com o botão direito no arquivo baixado e
+escolher "Extrair Tudo" antes de começar.
 Se não extrair, o Docker não encontrará os arquivos do servidor.
 
 ==========================================================
           🚀 HTTP API LAB - LABORATÓRIO DE ESTUDOS
-          
+
 ==========================================================
 
 Bem-vindo ao Laboratório de Estudos de Verbos HTTP!
-Este ambiente foi desenvolvido por Leandro Ferreira para 
+Este ambiente foi desenvolvido por Leandro Ferreira para
 ajudar você a dominar as requisições POST, GET, PUT e DELETE.
 
 ----------------------------------------------------------
 📌 REQUISITO ÚNICO:
-Este laboratório utiliza tecnologia de CONTAINERS (Docker). 
-Isso garante que nada seja instalado diretamente no seu 
+Este laboratório utiliza tecnologia de CONTAINERS (Docker).
+Isso garante que nada seja instalado diretamente no seu
 Windows, evitando conflitos de banco de dados ou versões.
 
 Se você ainda não tem o Docker Desktop:
-Ao clicar no instalador abaixo, ele abrirá automaticamente 
+Ao clicar no instalador abaixo, ele abrirá automaticamente
 a página oficial de download para você.
 ----------------------------------------------------------
 
+✅ ZERO CONFIGURAÇÃO DE BANCO DE DADOS:
+Este laboratório usa SQLite — um banco de dados embutido que
+não precisa de instalação, senha ou servidor separado.
+O banco (arquivo lab_postman.db) é criado automaticamente
+na primeira execução. Simples assim!
+
+----------------------------------------------------------
 COMO INICIAR:
 1. Extraia todo o conteúdo deste arquivo ZIP para uma pasta.
 2. Clique duas vezes no arquivo: Instalar_Lab.bat
 3. Aguarde o terminal concluir a configuração.
-4. 4. O laboratório abrirá automaticamente no seu navegador em:
+4. O laboratório abrirá automaticamente no seu navegador em:
    http://localhost:3005
 
+----------------------------------------------------------
+🎓 ROTEIRO DE APRENDIZADO:
+
+Passo 1 — Selecione uma tabela (Pessoa, Carro, Casa ou Cachorro)
+Passo 2 — Clique em POST → preencha os dados → grave no banco
+Passo 3 — Clique em GET → veja o registro no terminal JSON
+Passo 4 — Clique em PUT → modal abre com os dados atuais →
+           edite o que quiser → confirme a atualização
+Passo 5 — Clique em DELETE → registro removido do banco
+
+----------------------------------------------------------
+TABELAS DISPONÍVEIS:
+
+  👤 PESSOA   → campos: nome, idade, cpf, cidade
+  🚗 CARRO    → campos: marca, modelo, ano, cor
+  🏠 CASA     → campos: endereco, bairro, valor, vagas
+  🐶 CACHORRO → campos: nome, raca, idade, dono
+
+----------------------------------------------------------
 DICA DE OURO:
 A primeira execução pode demorar de 2 a 3 minutos enquanto o
-Docker prepara o motor do banco de dados e do servidor. 
-Nas próximas vezes, o acesso será instantâneo!
+Docker prepara o ambiente. Nas próximas vezes, instantâneo!
 
 Bom estudo!
 ----------------------------------------------------------
 Produzido por: Leandro Ferreira
+GitHub: https://github.com/lfeletronADS/http-api-lab
