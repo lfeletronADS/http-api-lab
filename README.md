@@ -179,25 +179,33 @@ Este projeto foi construido de forma intencional com algumas lacunas. Cada item 
 **O que e validar uma entrada?**  
 Validar uma entrada significa verificar se o dado que chegou da requisicao e exatamente o que voce esperava — antes de usar esse dado em qualquer operacao. Por exemplo: se o campo `idade` deve ser um numero, voce precisa garantir que o usuario nao mandou a palavra `"banana"` no lugar. Se o campo `nome` nao pode ficar vazio, voce precisa checar isso antes de gravar no banco.
 
-**O que e SQL Injection?**  
-SQL Injection e um dos ataques mais classicos da internet. Ele acontece quando um usuario mal-intencionado digita um trecho de codigo SQL dentro de um campo comum — e o servidor executa esse codigo sem perceber.
+**O que e SQL Injection?**
+SQL Injection acontece quando um usuario consegue inserir trechos de codigo SQL dentro de uma requisicao — e o servidor executa esse codigo sem perceber, achando que e parte da query normal.
 
-Imagine que alguem preencha o campo `nome` assim:
+**O que realmente funciona neste projeto?**
 
-```
-'; DROP TABLE pessoas; --
-```
+Os *valores* dos campos (nome, idade, etc.) estao protegidos — o better-sqlite3 usa ? como placeholder e trata o valor sempre como dado, nunca como codigo. Mas ha dois pontos vulneraveis reais neste codigo:
 
-Se o servidor montar a query concatenando esse valor diretamente, o banco receberia:
+**Vulnerabilidade 1 — Nome da tabela vem da URL sem filtro:**
 
-```sql
-INSERT INTO pessoas (nome) VALUES (''; DROP TABLE pessoas; --')
-```
+O servidor faz isso:
 
-E a tabela `pessoas` seria apagada completamente.
+    const { tabela } = req.params;
+    db.prepare(SELECT * FROM tabela ORDER BY id DESC).all();
 
-**Por que este projeto esta vulneravel?**  
-As rotas dinamicas deste projeto recebem o nome da tabela diretamente da URL — `/api/:tabela` — e usam esse valor dentro do SQL sem nenhuma verificacao. Um usuario poderia chamar `/api/sqlite_master` ou injetar comandos.
+Qualquer pessoa pode chamar GET /api/sqlite_master e o banco retorna a estrutura interna inteira: nomes de tabelas, colunas e tipos — exposta em uma unica requisicao. Um atacante usaria isso para mapear o sistema antes de atacar.
+
+**Vulnerabilidade 2 — Nomes das colunas vem do body sem filtro:**
+
+O servidor faz isso:
+
+    const colunas = Object.keys(dados).join(', ');
+    db.prepare(INSERT INTO tabela (colunas) VALUES (?));
+
+As chaves do JSON enviado pelo usuario viram nomes de colunas direto na query. Se o nome da chave for um trecho SQL, ele e executado sem nenhuma verificacao.
+
+**Por que os valores dos campos sao seguros?**
+Porque o better-sqlite3 usa prepared statements — o ? faz com que o banco trate o valor sempre como dado, nunca como instrucao SQL. O perigo real neste projeto nao e o conteudo dos campos, e o *nome da tabela na URL* e os *nomes das colunas nas chaves do JSON*, que sao concatenados diretamente na query.
 
 **O seu desafio:** Crie uma lista de tabelas permitidas (`pessoas`, `carros`, `casas`, `cachorros`) e verifique no inicio de cada rota se a tabela solicitada esta nessa lista. Se nao estiver, retorne um erro 400. Pesquise tambem como o `better-sqlite3` usa `prepared statements` para proteger os valores dos campos.
 
