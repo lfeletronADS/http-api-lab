@@ -102,7 +102,7 @@ Tabelas criadas automaticamente no primeiro start — nao precisa rodar nenhum S
 2. Preencha os dados no modal
 3. **POST** — grava no banco e exibe o ID gerado
 4. **GET** — busca o registro mais recente, exibe JSON no terminal
-5. **PUT** — abre o modal para alterar campos e atualiza o banco
+5. **PUT** — abre o modal com os valores atuais pre-preenchidos, edite e confirme
 6. **DELETE** — remove o registro buscado pelo GET
 
 Painel em tempo real:
@@ -119,6 +119,8 @@ Painel em tempo real:
 ├── server.js          # API Node.js/Express com SQLite
 ├── index.html         # Interface visual interativa
 ├── docker-compose.yml # Definicao do container
+├── Dockerfile         # Imagem do container
+├── init.sql           # Referencia da estrutura do banco (educativo)
 ├── package.json       # Dependencias
 ├── lab_postman.db     # Banco SQLite (criado automaticamente)
 └── node_modules/      # Instalado automaticamente no start
@@ -162,10 +164,115 @@ Sem React, Vue ou qualquer framework no frontend. Foco total nos verbos HTTP e n
 
 ---
 
-## Proximos passos sugeridos
+## Desafios para voce — proximos niveis
 
-- [ ] Adicionar validacao de entrada (prevenir SQL Injection nas rotas dinamicas)
-- [ ] Rota GET por ID: /api/:tabela/:id
-- [ ] Paginacao no GET (LIMIT/OFFSET)
-- [ ] Mover configuracoes para .env
-- [ ] Autenticacao com JWT — proximo nivel de aprendizado
+Este projeto foi construido de forma intencional com algumas lacunas. Cada item abaixo e um desafio real que voce pode tentar resolver para evoluir o projeto. Nao existe resposta errada — o objetivo e pensar, pesquisar e tentar.
+
+---
+
+### Desafio 1 — Validacao de entrada e SQL Injection
+
+- [ ] **Adicionar validacao de entrada nas rotas dinamicas**
+
+**O que e validar uma entrada?**  
+Validar uma entrada significa verificar se o dado que chegou da requisicao e exatamente o que voce esperava — antes de usar esse dado em qualquer operacao. Por exemplo: se o campo `idade` deve ser um numero, voce precisa garantir que o usuario nao mandou a palavra `"banana"` no lugar. Se o campo `nome` nao pode ficar vazio, voce precisa checar isso antes de gravar no banco.
+
+**O que e SQL Injection?**  
+SQL Injection e um dos ataques mais classicos da internet. Ele acontece quando um usuario mal-intencionado digita um trecho de codigo SQL dentro de um campo comum — e o servidor executa esse codigo sem perceber.
+
+Imagine que alguem preencha o campo `nome` assim:
+
+```
+'; DROP TABLE pessoas; --
+```
+
+Se o servidor montar a query concatenando esse valor diretamente, o banco receberia:
+
+```sql
+INSERT INTO pessoas (nome) VALUES (''; DROP TABLE pessoas; --')
+```
+
+E a tabela `pessoas` seria apagada completamente.
+
+**Por que este projeto esta vulneravel?**  
+As rotas dinamicas deste projeto recebem o nome da tabela diretamente da URL — `/api/:tabela` — e usam esse valor dentro do SQL sem nenhuma verificacao. Um usuario poderia chamar `/api/sqlite_master` ou injetar comandos.
+
+**O seu desafio:** Crie uma lista de tabelas permitidas (`pessoas`, `carros`, `casas`, `cachorros`) e verifique no inicio de cada rota se a tabela solicitada esta nessa lista. Se nao estiver, retorne um erro 400. Pesquise tambem como o `better-sqlite3` usa `prepared statements` para proteger os valores dos campos.
+
+---
+
+### Desafio 2 — Rota GET por ID
+
+- [ ] **Criar a rota GET /api/:tabela/:id**
+
+**O que falta?**  
+Hoje o GET retorna todos os registros da tabela de uma vez. Mas em uma API real, voce precisa buscar um registro especifico pelo seu ID — sem trazer os outros.
+
+**O que isso significa na pratica?**  
+Se voce tem 500 pessoas cadastradas e precisa editar apenas a de ID 42, nao faz sentido baixar todas as 500 para encontrar a que voce quer. A rota `/api/pessoas/42` deveria retornar apenas aquele registro.
+
+**O seu desafio:** Adicione uma nova rota no `server.js` que aceite um ID na URL e execute um `SELECT * FROM tabela WHERE id = ?`. Se o registro nao existir, retorne um erro 404 com uma mensagem clara.
+
+---
+
+### Desafio 3 — Paginacao no GET
+
+- [ ] **Implementar paginacao com LIMIT e OFFSET**
+
+**O que e paginacao?**  
+Quando uma tabela tem muitos registros, retornar todos de uma vez e ineficiente — imagina carregar 10.000 carros de uma vez na tela. Paginacao e a tecnica de dividir esses resultados em paginas: primeiro voce ve os 10 mais recentes, depois os proximos 10, e assim por diante.
+
+**Como funciona no SQL?**  
+O SQL tem dois comandos para isso: `LIMIT` define quantos registros trazer, e `OFFSET` define a partir de qual posicao comecar:
+
+```sql
+SELECT * FROM pessoas ORDER BY id DESC LIMIT 10 OFFSET 0;  -- pagina 1
+SELECT * FROM pessoas ORDER BY id DESC LIMIT 10 OFFSET 10; -- pagina 2
+SELECT * FROM pessoas ORDER BY id DESC LIMIT 10 OFFSET 20; -- pagina 3
+```
+
+**O seu desafio:** Modifique a rota GET para aceitar parametros de query na URL, como `/api/pessoas?page=2&limit=10`. Use esses valores para calcular o `OFFSET` correto e retornar apenas os registros daquela pagina. Inclua no JSON de resposta o total de registros para que o frontend saiba quantas paginas existem.
+
+---
+
+### Desafio 4 — Variaveis de ambiente com .env
+
+- [ ] **Mover configuracoes para um arquivo .env**
+
+**O que e um arquivo .env?**  
+Um arquivo `.env` e onde ficam as configuracoes que mudam de ambiente para ambiente — como a porta do servidor, senhas ou outras definicoes que nao devem ficar fixas no codigo. O nome vem de "environment" (ambiente em ingles).
+
+**Por que isso importa?**  
+Hoje a porta `3000` esta escrita diretamente no `server.js`. Se amanha voce precisar mudar para `4000`, tem que editar o codigo. Com o `.env`, voce muda so o arquivo de configuracao sem tocar no codigo. Alem disso, arquivos `.env` nunca devem ser enviados para o GitHub — eles ficam no `.gitignore` — porque podem conter senhas e chaves secretas.
+
+**O seu desafio:** Crie um arquivo `.env` na raiz do projeto com `PORT=3000`. Instale a biblioteca `dotenv` (`npm install dotenv`), importe ela no inicio do `server.js` e substitua o valor fixo `3000` pela variavel `process.env.PORT`. Adicione `.env` ao `.gitignore`.
+
+---
+
+### Desafio 5 — Autenticacao com JWT
+
+- [ ] **Proteger as rotas com autenticacao por token JWT**
+
+**O que e autenticacao?**  
+Hoje qualquer pessoa que souber a URL da sua API pode criar, editar ou deletar registros sem nenhuma restricao. Autenticacao e o mecanismo que garante que so quem tem permissao pode acessar determinadas rotas.
+
+**O que e JWT?**  
+JWT significa JSON Web Token. E um token (uma string longa e cifrada) que o servidor gera quando o usuario faz login com usuario e senha. Nas proximas requisicoes, o cliente envia esse token no cabecalho da requisicao — e o servidor valida se o token e autentico antes de executar a operacao.
+
+O fluxo funciona assim:
+
+```
+1. Cliente envia: POST /login  { usuario: "admin", senha: "123" }
+2. Servidor valida e retorna: { token: "eyJhbGciOiJIUzI1NiIs..." }
+3. Cliente armazena o token
+4. Nas proximas requisicoes: GET /api/pessoas
+   Header: Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+5. Servidor verifica o token antes de responder
+```
+
+**O seu desafio:** Instale a biblioteca `jsonwebtoken`, crie uma rota `POST /login` que aceite usuario e senha e retorne um token. Crie um middleware que verifique o token antes de permitir acesso as rotas `/api/*`. Teste usando o campo de cabecalho no Postman ou diretamente pela interface.
+
+---
+
+> Boa sorte! Cada desafio resolvido e um nivel a mais na sua evolucao como desenvolvedor.  
+> Compartilhe suas solucoes abrindo um Pull Request neste repositorio.
