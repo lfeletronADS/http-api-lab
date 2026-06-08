@@ -21,14 +21,14 @@ if %errorlevel%==0 (
 )
 :: --- FIM DA TRAVA ---
 
-title GERENCIADOR HTTP API LAB - LEANDRO FERREIRA
+title HTTP API LAB - LEANDRO FERREIRA
 cls
 echo ======================================================
 echo           VERIFICANDO REQUISITOS DO SISTEMA
 echo ======================================================
 echo.
 
-:: 1. Verifica se o comando 'docker' existe no Windows
+:: 1. Verifica se o Docker existe
 where docker >nul 2>nul
 if %errorlevel% neq 0 (
     echo [AVISO] O Docker nao foi encontrado neste computador.
@@ -45,7 +45,7 @@ if %errorlevel% neq 0 (
     exit
 )
 
-:: 2. Verifica se o Docker esta aberto (Servico rodando)
+:: 2. Verifica se o Docker esta rodando
 echo [OK] Docker instalado. Verificando se esta aberto...
 docker info >nul 2>&1
 if %errorlevel% neq 0 (
@@ -55,26 +55,34 @@ if %errorlevel% neq 0 (
     echo.
     echo Pressione qualquer tecla quando o Docker estiver pronto...
     pause
-    goto :2
 )
 
-:2
 cls
 echo ======================================================
-echo           INICIANDO HTTP API LAB (ISOLADO)
+echo      INICIANDO HTTP API LAB
 echo ======================================================
 echo.
-echo [1/3] Construindo containers (Node.js + MariaDB)...
-docker-compose up -d --build
+echo  Banco de dados: SQLite (sem instalacao necessaria)
+echo  O banco sera criado automaticamente na pasta do projeto.
+echo.
+echo [1/3] Subindo o container...
+docker compose up -d
 
-echo [2/3] Aguardando sincronizacao...
-timeout /t 10 /nobreak >nul
+echo.
+echo [2/3] Aguardando o servidor iniciar...
+timeout /t 8 /nobreak >nul
 
-echo [3/3] Abrindo o Laboratorio no seu navegador...
+echo.
+echo [3/3] Abrindo o Laboratorio no navegador...
 start http://localhost:3005
 
 echo.
 echo ======================================================
-echo    SUCESSO! O Laboratorio esta ON em: http://localhost
+echo   SUCESSO! Laboratorio disponivel em:
+echo   http://localhost:3005
 echo ======================================================
+echo.
+echo   Para parar o laboratorio, execute:
+echo   docker compose down
+echo.
 pause
