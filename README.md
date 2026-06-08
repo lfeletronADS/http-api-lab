@@ -249,15 +249,37 @@ SELECT * FROM pessoas ORDER BY id DESC LIMIT 10 OFFSET 20; -- pagina 3
 
 - [ ] **Mover configuracoes para um arquivo .env**
 
-**O que e um arquivo .env?**  
-Um arquivo `.env` e onde ficam as configuracoes que mudam de ambiente para ambiente — como a porta do servidor, senhas ou outras definicoes que nao devem ficar fixas no codigo. O nome vem de "environment" (ambiente em ingles).
+**O que e um arquivo .env?**
+Um arquivo .env e onde ficam as configuracoes que mudam de ambiente para ambiente — como portas, senhas e chaves. O nome vem de environment (ambiente em ingles). Cada linha e um par chave:valor:
 
-**Por que isso importa?**  
-Hoje a porta `3000` esta escrita diretamente no `server.js`. Se amanha voce precisar mudar para `4000`, tem que editar o codigo. Com o `.env`, voce muda so o arquivo de configuracao sem tocar no codigo. Alem disso, arquivos `.env` nunca devem ser enviados para o GitHub — eles ficam no `.gitignore` — porque podem conter senhas e chaves secretas.
+    PORT=3000
+    DB_PATH=./lab_postman.db
 
-**O seu desafio:** Crie um arquivo `.env` na raiz do projeto com `PORT=3000`. Instale a biblioteca `dotenv` (`npm install dotenv`), importe ela no inicio do `server.js` e substitua o valor fixo `3000` pela variavel `process.env.PORT`. Adicione `.env` ao `.gitignore`.
+**A diferenca entre porta interna e porta externa no Docker:**
 
----
+Pense no Docker como uma caixa fechada. Dentro dessa caixa o servidor roda em uma porta — essa e a porta *interna*, conhecida so pelo processo dentro do container. Do lado de fora da caixa, quem quiser acessar precisa bater em outra porta — essa e a porta *externa*, exposta para a rede local ou para a internet.
+
+O docker-compose faz a ponte entre as duas:
+
+    ports:
+      - 3005:3000
+
+Isso significa: quem bater na porta 3005 de fora vai ser redirecionado para a porta 3000 de dentro. E como uma fechadura com duas chaves — quem tem so uma das duas nao consegue abrir. O servidor precisa saber que escuta na 3000, e quem acessa precisa saber que bate na 3005.
+
+    Rede local  →  porta 3005 (externa)  →  Docker  →  porta 3000 (interna)  →  server.js
+
+Se voce mudar a porta interna no .env mas esquecer de mudar no docker-compose (ou vice-versa), a conexao quebra — as duas chaves precisam estar sincronizadas.
+
+**Por que isso importa?**
+Hoje o valor 3000 esta fixo dentro do server.js. Se amanha voce quiser mudar, precisa editar o codigo. Com o .env, voce muda so a configuracao sem tocar no codigo. Alem disso, arquivos .env nunca devem ir para o GitHub — eles ficam no .gitignore — porque podem conter senhas e chaves secretas.
+
+**O seu desafio:**
+Crie um arquivo .env com as variaveis abaixo:
+
+    PORT=3000
+    DB_PATH=./lab_postman.db
+
+Instale a biblioteca dotenv (npm install dotenv), importe no inicio do server.js e substitua os valores fixos pelas variaveis de ambiente (process.env.PORT e process.env.DB_PATH). Adicione .env ao .gitignore. Por fim, teste mudar a porta interna para 4000, ajustar o docker-compose para 3006:4000, e confirme que o laboratorio continua abrindo — so que agora nas novas portas.
 
 ### Desafio 5 — Autenticacao com JWT
 
