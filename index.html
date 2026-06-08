@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Laboratório HTTP Educativo</title>
+    <style>
+      :root { --get:#61affe; --post:#49cc90; --put:#fca130; --delete:#f93e3e; --bash:#1e1e1e; }
+      body { font-family:"Courier New",monospace; background:#f0f2f5; display:flex; flex-direction:column; align-items:center; padding:20px; margin:0; }
+      .container { display:flex; gap:20px; width:100%; max-width:1100px; }
+      .cards-column { flex:3; display:flex; flex-direction:column; gap:15px; }
+      .card { background:white; padding:15px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); border-left:5px solid #ccc; }
+      .card h3 { margin-top:0; font-size:14px; color:#666; text-transform:uppercase; }
+      .card-post { border-left-color:var(--post); }
+      .entity-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+      .entity-btn { background:#f8f9fa; border:1px solid #ddd; padding:12px; border-radius:6px; cursor:pointer; text-align:center; transition:0.2s; font-weight:bold; color:#333; }
+      .card-json { border-left-color:var(--get); background:var(--bash); color:#00ff00; min-height:120px; overflow:auto; }
+      pre { margin:0; white-space:pre-wrap; font-size:13px; }
+      .card-text { border-left-color:var(--put); }
+      .display-text { font-size:14px; color:#333; line-height:1.6; }
+      .card-log { border-left-color:#333; background:#fff; font-size:11px; }
+      .log-list { list-style:none; padding:0; margin:0; }
+      .log-item { padding:4px 0; border-bottom:1px solid #eee; color:#555; }
+      .buttons-column { flex:1; display:flex; flex-direction:column; gap:10px; position:sticky; top:20px; height:fit-content; }
+      .btn-http { border:none; color:white; padding:20px 10px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:16px; transition:0.1s; }
+      .btn-get { background:var(--get); }
+      .btn-post { background:var(--post); }
+      .btn-put { background:var(--put); }
+      .btn-delete { background:var(--delete); }
+      .btn-clear { background:#666; padding:10px; margin-top:20px; font-size:12px; }
+      .modal { display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8); }
+      .modal-content { background:white; margin:10% auto; padding:20px; border-radius:10px; width:320px; box-shadow:0 5px 15px rgba(0,0,0,0.5); }
+      .modal-input { width:100%; padding:10px; margin:8px 0; border:1px solid #ddd; border-radius:4px; box-sizing:border-box; }
+      .modal-input.preenchido { border-color:var(--put); background:#fffbf0; }
+      .modal-btns { display:flex; gap:10px; margin-top:15px; }
+      .btn-confirm { color:white; border:none; padding:10px; flex:1; border-radius:4px; cursor:pointer; font-weight:bold; }
+      .btn-close { background:#999; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; }
+    </style>
+  </head>
+  <body>
+    <div style="text-align:center; margin-bottom:30px; width:100%">
+      <h1 style="color:#333; margin-bottom:5px">🚀 API Lab CRUD para Verbos HTTP</h1>
+      <p style="color:#666; font-size:14px">Ambiente Educativo CRUD - Desenvolvido por Leandro Ferreira</p>
+    </div>
+
+    <div class="container">
+      <div class="cards-column">
+        <div class="card card-post">
+          <h3>1. Estrutura do Banco (Tabelas)</h3>
+          <div class="entity-grid">
+            <div class="entity-btn" id="btn-Pessoa" onclick="selecionarEntidade('Pessoa', ['Nome','Idade','CPF','Cidade'])">👤 PESSOA</div>
+            <div class="entity-btn" id="btn-Carro" onclick="selecionarEntidade('Carro', ['Marca','Modelo','Ano','Cor'])">🚗 CARRO</div>
+            <div class="entity-btn" id="btn-Casa" onclick="selecionarEntidade('Casa', ['Endereco','Bairro','Valor','Vagas'])">🏠 CASA</div>
+            <div class="entity-btn" id="btn-Cachorro" onclick="selecionarEntidade('Cachorro', ['Nome','Raca','Idade','Dono'])">🐶 CACHORRO</div>
+          </div>
+          <div id="entidadeInfo" style="color:#999; font-size:12px; margin-top:10px; font-weight:bold;">Selecione uma tabela...</div>
+          <div id="postMessage" style="font-weight:bold; margin-top:5px"></div>
+        </div>
+
+        <div class="card card-json">
+          <h3>2. Bash Terminal (JSON Output)</h3>
+          <pre id="jsonBash">// Aguardando GET ou POST...</pre>
+        </div>
+
+        <div class="card card-text">
+          <h3>3. Visualização em Texto (Estado Atual)</h3>
+          <div id="textView" class="display-text">Nenhum objeto carregado.</div>
+        </div>
+
+        <div class="card card-log">
+          <h3>4. Histórico de Execução (URI)</h3>
+          <ul id="uriLog" class="log-list"></ul>
+        </div>
+      </div>
+
+      <div class="buttons-column">
+        <button class="btn-http btn-post" onclick="abrirModalPost()">POST</button>
+        <button class="btn-http btn-get" onclick="executarGet()">GET</button>
+        <button class="btn-http btn-put" onclick="abrirModalPut()">PUT</button>
+        <button class="btn-http btn-delete" onclick="executarDelete()">DELETE</button>
+        <button class="btn-http btn-clear" onclick="limparBash()">CLEAR BASH</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin:30px auto; width:100%; max-width:1100px; border-left-color:#666;">
+      <h3>📚 Roteiro de Aprendizado</h3>
+      <div style="font-size:14px; color:#444; line-height:1.6">
+        <p><b>Objetivo:</b> Ensinar o ciclo de vida das requisições HTTP e a persistência de dados.</p>
+        <ul>
+          <li><b>Passo 1:</b> Selecione uma tabela → clique <b>POST</b> → preencha os dados → grave no banco.</li>
+          <li><b>Passo 2:</b> Clique <b>GET</b> → veja o registro mais recente no terminal JSON.</li>
+          <li><b>Passo 3:</b> Clique <b>PUT</b> → modal abre pré-preenchido com os valores atuais → edite → confirme.</li>
+          <li><b>Passo 4:</b> Clique <b>DELETE</b> → registro removido do banco.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="modalCrud" class="modal">
+      <div class="modal-content">
+        <h3 id="modalTitle" style="margin-top:0">Configurar Dados</h3>
+        <p id="modalSubtitle" style="font-size:12px; color:#999; margin:0 0 10px"></p>
+        <div id="modalInputs"></div>
+        <div class="modal-btns">
+          <button id="btnConfirmar" class="btn-confirm" onclick="confirmarModal()">Confirmar</button>
+          <button class="btn-close" onclick="fecharModal()">X</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let ultimoId = null;
+      let ultimoRegistro = {};
+      let entidadeAtiva = '';
+      let camposAtivos = [];
+      let modoModal = 'post';
+
+      function fecharModal() {
+        document.getElementById('modalCrud').style.display = 'none';
+      }
+
+      function destacarBotao(entidade) {
+        document.querySelectorAll('.entity-btn').forEach(b => { b.style.background = '#f8f9fa'; b.style.color = '#333'; });
+        const btn = document.getElementById('btn-' + entidade);
+        if (btn) { btn.style.background = 'var(--post)'; btn.style.color = 'white'; }
+      }
+
+      function getDynamicURL() {
+        if (!entidadeAtiva) return null;
+        let t = entidadeAtiva.toLowerCase();
+        if (t === 'casa') t = 'casas';
+        else if (!t.endsWith('s')) t += 's';
+        return '/api/' + t;
+      }
+
+      function addLog(metodo, uri) {
+        const item = document.createElement('li');
+        item.className = 'log-item';
+        item.innerHTML = '<strong>' + metodo + ':</strong> http://api.guardiao.lan' + uri;
+        document.getElementById('uriLog').prepend(item);
+      }
+
+      function setMsg(txt, cor) {
+        const el = document.getElementById('postMessage');
+        el.style.color = cor || 'var(--post)';
+        el.innerText = txt;
+      }
+
+      function limparBash() {
+        document.getElementById('jsonBash').innerText = '// Bash Limpo.';
+        document.getElementById('uriLog').innerHTML = '';
+        document.getElementById('textView').innerText = 'Aguardando ação...';
+        ultimoId = null;
+        ultimoRegistro = {};
+        setMsg('');
+      }
+
+      function selecionarEntidade(entidade, campos) {
+        if (entidadeAtiva !== entidade) limparBash();
+        entidadeAtiva = entidade;
+        camposAtivos = campos;
+        destacarBotao(entidade);
+        document.getElementById('entidadeInfo').innerHTML =
+          '<b>STATUS:</b> Operando na tabela <span style="color:var(--post)">' + entidade.toUpperCase() + '</span>';
+      }
+
+      function abrirModalPost() {
+        if (!entidadeAtiva) return alert('Selecione uma tabela primeiro!');
+        modoModal = 'post';
+        document.getElementById('modalTitle').innerText = 'POST — Nova ' + entidadeAtiva;
+        document.getElementById('modalTitle').style.color = 'var(--post)';
+        document.getElementById('modalSubtitle').innerText = 'Preencha os campos para criar um novo registro.';
+        document.getElementById('btnConfirmar').style.background = 'var(--post)';
+        document.getElementById('btnConfirmar').innerText = 'Gravar no Banco';
+        const container = document.getElementById('modalInputs');
+        container.innerHTML = '';
+        camposAtivos.forEach(c => {
+          container.innerHTML += '<label style="font-size:11px;color:#777">' + c + ':</label>' +
+            '<input type="text" id="field_' + c + '" class="modal-input" placeholder="Novo valor...">';
+        });
+        document.getElementById('modalCrud').style.display = 'block';
+      }
+
+      function abrirModalPut() {
+        if (!ultimoId) return alert('Faça um GET primeiro para carregar um registro!');
+        modoModal = 'put';
+        document.getElementById('modalTitle').innerText = 'PUT — Editando ID: ' + ultimoId;
+        document.getElementById('modalTitle').style.color = 'var(--put)';
+        document.getElementById('modalSubtitle').innerText = 'Campos pré-preenchidos com os valores atuais. Edite o que quiser e confirme.';
+        document.getElementById('btnConfirmar').style.background = 'var(--put)';
+        document.getElementById('btnConfirmar').innerText = 'Atualizar no Banco';
+        const container = document.getElementById('modalInputs');
+        container.innerHTML = '';
+        camposAtivos.forEach(c => {
+          const val = ultimoRegistro[c.toLowerCase()] !== undefined ? ultimoRegistro[c.toLowerCase()] : '';
+          container.innerHTML += '<label style="font-size:11px;color:#777">' + c + ':</label>' +
+            '<input type="text" id="field_' + c + '" class="modal-input preenchido" value="' + val + '">';
+        });
+        document.getElementById('modalCrud').style.display = 'block';
+      }
+
+      async function confirmarModal() {
+        if (modoModal === 'post') await confirmarPost();
+        else await confirmarPut();
+      }
+
+      async function confirmarPost() {
+        const dados = {};
+        camposAtivos.forEach(c => {
+          const val = document.getElementById('field_' + c).value.trim();
+          if (val !== '') dados[c.toLowerCase()] = val;
+        });
+        if (!Object.keys(dados).length) return alert('Preencha ao menos um campo!');
+        fecharModal();
+        const url = getDynamicURL();
+        try {
+          const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(dados) });
+          const data = await res.json();
+          if (res.ok && data.id) {
+            ultimoId = data.id;
+            setMsg('✅ CRIADO! ID: ' + ultimoId, 'var(--post)');
+            addLog('POST', url);
+            await executarGet();
+          }
+        } catch(e) { console.error(e); }
+      }
+
+      async function confirmarPut() {
+        const dados = {};
+        camposAtivos.forEach(c => {
+          const val = document.getElementById('field_' + c).value.trim();
+          if (val !== '') dados[c.toLowerCase()] = val;
+        });
+        if (!Object.keys(dados).length) return alert('Edite ao menos um campo!');
+        fecharModal();
+        const url = getDynamicURL() + '/' + ultimoId;
+        try {
+          const res = await fetch(url, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(dados) });
+          if (res.ok) {
+            setMsg('🔄 ID ' + ultimoId + ' ATUALIZADO!', 'var(--put)');
+            addLog('PUT', url);
+            await executarGet();
+          }
+        } catch(e) { console.error(e); }
+      }
+
+      async function executarGet() {
+        const url = getDynamicURL();
+        if (!url) return alert('Selecione uma tabela!');
+        try {
+          const res = await fetch(url);
+          const dados = await res.json();
+          const ultimo = dados[0];
+          if (ultimo) {
+            ultimoId = ultimo.id;
+            ultimoRegistro = ultimo;
+            document.getElementById('jsonBash').innerText = JSON.stringify(ultimo, null, 4);
+            let texto = '<div style="background:#eee;padding:5px;border-radius:4px;margin-bottom:10px;font-size:12px;border:1px solid #ccc">📍 <b>TABELA:</b> ' + entidadeAtiva.toUpperCase() + ' | 🆔 <b>ID:</b> ' + ultimo.id + '</div>';
+            for (let key in ultimo) {
+              if (key !== 'id' && key !== 'criado_em' && ultimo[key] !== null)
+                texto += '<b>' + key.toUpperCase() + ':</b> ' + ultimo[key] + '<br>';
+            }
+            document.getElementById('textView').innerHTML = texto;
+            addLog('GET', url);
+          } else {
+            document.getElementById('jsonBash').innerText = '[ ] — Tabela vazia';
+            document.getElementById('textView').innerText = 'Nenhum registro encontrado.';
+            ultimoId = null;
+            ultimoRegistro = {};
+          }
+        } catch(e) { console.error(e); }
+      }
+
+      async function executarDelete() {
+        if (!ultimoId) return alert('Faça um GET primeiro para selecionar um registro!');
+        const url = getDynamicURL() + '/' + ultimoId;
+        try {
+          const res = await fetch(url, { method:'DELETE' });
+          if (res.ok) {
+            setMsg('🗑️ ID ' + ultimoId + ' REMOVIDO!', 'var(--delete)');
+            document.getElementById('jsonBash').innerText = '[ ]';
+            document.getElementById('textView').innerText = 'Registro deletado.';
+            addLog('DELETE', url);
+            ultimoId = null;
+            ultimoRegistro = {};
+          }
+        } catch(e) { console.error(e); }
+      }
+    </script>
+  </body>
+</html>
