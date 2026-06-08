@@ -64,3 +64,4 @@ Bom estudo!
 ----------------------------------------------------------
 Produzido por: Leandro Ferreira
 GitHub: https://github.com/lfeletronADS/http-api-lab
+Download: https://github.com/lfeletronADS/http-api-lab/raw/main/http-api-lab.zip
