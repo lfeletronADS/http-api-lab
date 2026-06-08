@@ -176,40 +176,93 @@ Este projeto foi construido de forma intencional com algumas lacunas. Cada item 
 
 - [ ] **Adicionar validacao de entrada nas rotas dinamicas**
 
-**O que e validar uma entrada?**  
-Validar uma entrada significa verificar se o dado que chegou da requisicao e exatamente o que voce esperava — antes de usar esse dado em qualquer operacao. Por exemplo: se o campo `idade` deve ser um numero, voce precisa garantir que o usuario nao mandou a palavra `"banana"` no lugar. Se o campo `nome` nao pode ficar vazio, voce precisa checar isso antes de gravar no banco.
+**O que e validar uma entrada?**
+Validar uma entrada significa verificar se o dado que chegou da requisicao e exatamente o que voce esperava antes de usar esse dado em qualquer operacao. Se o campo idade deve ser um numero, voce precisa garantir que o usuario nao mandou a palavra banana no lugar. Se o campo nome nao pode ficar vazio, voce precisa checar isso antes de gravar no banco.
 
 **O que e SQL Injection?**
-SQL Injection acontece quando um usuario consegue inserir trechos de codigo SQL dentro de uma requisicao — e o servidor executa esse codigo sem perceber, achando que e parte da query normal.
+SQL Injection acontece quando um usuario consegue inserir trechos de codigo SQL dentro de uma requisicao e o servidor executa esse codigo sem perceber, achando que e parte da query normal.
+
+Imagine que alguem preencha o campo nome assim:
+
+    '; DELETE FROM pessoas; DELETE FROM carros; DELETE FROM casas; DELETE FROM cachorros; --
+
+Se o servidor montar a query concatenando esse valor diretamente, o banco receberia e executaria isso em sequencia:
+
+    INSERT INTO pessoas (nome) VALUES ('');
+    DELETE FROM pessoas;
+    DELETE FROM carros;
+    DELETE FROM casas;
+    DELETE FROM cachorros;
+
+Resultado: todos os registros de todas as tabelas apagados em uma unica requisicao.
 
 **O que realmente funciona neste projeto?**
 
-Os *valores* dos campos (nome, idade, etc.) estao protegidos — o better-sqlite3 usa ? como placeholder e trata o valor sempre como dado, nunca como codigo. Mas ha dois pontos vulneraveis reais neste codigo:
+Os valores dos campos estao protegidos pelo better-sqlite3 usando prepared statements com ? como placeholder. O perigo real esta em dois outros pontos:
 
-**Vulnerabilidade 1 — Nome da tabela vem da URL sem filtro:**
-
-O servidor faz isso:
+Vulnerabilidade 1: o nome da tabela vem direto da URL sem filtro:
 
     const { tabela } = req.params;
-    db.prepare(SELECT * FROM tabela ORDER BY id DESC).all();
+    db.prepare("SELECT * FROM " + tabela + " ORDER BY id DESC").all();
 
-Qualquer pessoa pode chamar GET /api/sqlite_master e o banco retorna a estrutura interna inteira: nomes de tabelas, colunas e tipos — exposta em uma unica requisicao. Um atacante usaria isso para mapear o sistema antes de atacar.
+Qualquer pessoa pode chamar GET /api/sqlite_master e receber a estrutura interna do banco inteiro: nomes de tabelas, colunas e tipos expostos em uma unica requisicao.
 
-**Vulnerabilidade 2 — Nomes das colunas vem do body sem filtro:**
+Vulnerabilidade 2: os nomes das colunas vem do body sem filtro:
 
-O servidor faz isso:
+    const colunas = Object.keys(dados).join(", ");
+    db.prepare("INSERT INTO " + tabela + " (" + colunas + ") VALUES (?)");
 
-    const colunas = Object.keys(dados).join(', ');
-    db.prepare(INSERT INTO tabela (colunas) VALUES (?));
-
-As chaves do JSON enviado pelo usuario viram nomes de colunas direto na query. Se o nome da chave for um trecho SQL, ele e executado sem nenhuma verificacao.
-
-**Por que os valores dos campos sao seguros?**
-Porque o better-sqlite3 usa prepared statements — o ? faz com que o banco trate o valor sempre como dado, nunca como instrucao SQL. O perigo real neste projeto nao e o conteudo dos campos, e o *nome da tabela na URL* e os *nomes das colunas nas chaves do JSON*, que sao concatenados diretamente na query.
-
-**O seu desafio:** Crie uma lista de tabelas permitidas (`pessoas`, `carros`, `casas`, `cachorros`) e verifique no inicio de cada rota se a tabela solicitada esta nessa lista. Se nao estiver, retorne um erro 400. Pesquise tambem como o `better-sqlite3` usa `prepared statements` para proteger os valores dos campos.
+As chaves do JSON viram nomes de colunas direto na query sem nenhuma verificacao.
 
 ---
+
+ATIVIDADE PRATICA: Quebre sua propria aplicacao
+
+Esta atividade e intencional. O objetivo e voce sentir o impacto de uma falha de seguranca na propria pele para nunca mais esquecer de validar entradas.
+
+Passo 1: Crie registros na interface
+Abra o laboratorio, selecione PESSOA e faca ao menos 5 POSTs com nomes, idades e cidades reais. Confirme com GET que os dados estao la.
+
+Passo 2: Exponha a estrutura do banco
+Abra o terminal e execute:
+
+    curl -s http://localhost:3005/api/sqlite_master
+
+Voce acabou de receber a estrutura interna completa do banco de dados, como um atacante faria para mapear o sistema antes de agir.
+
+Passo 3: Apague tudo
+Com os IDs em maos (obtidos via GET), execute:
+
+    curl -s -X DELETE http://localhost:3005/api/pessoas/1
+    curl -s -X DELETE http://localhost:3005/api/pessoas/2
+    curl -s -X DELETE http://localhost:3005/api/pessoas/3
+
+Faca um GET novamente. Os dados foram. Sem senha, sem permissao especial, sem conhecimento avancado. Qualquer pessoa com acesso a URL consegue fazer isso.
+
+Passo 4: Recupere a aplicacao
+Como o banco e um arquivo SQLite, a recuperacao e simples:
+
+    docker compose down
+
+    rem Apaga o banco (Windows)
+    del lab_postman.db
+
+    # Apaga o banco (Linux/Mac)
+    rm lab_postman.db
+
+    docker compose up -d
+
+Abra o laboratorio. Tudo zerado, pronto para comecar de novo. Grave esse sentimento.
+
+**O que voce acabou de aprender:**
+Sem validacao, qualquer pessoa com acesso a URL pode apagar dados, expor a estrutura do banco e comprometer a aplicacao inteira sem precisar de nenhuma senha ou ferramenta avancada. Um simples teste unitario que verificasse se a tabela informada esta em uma lista de valores permitidos teria bloqueado todos esses ataques antes mesmo de chegar ao banco.
+
+**O seu desafio de correcao:**
+Crie uma lista de tabelas permitidas no server.js:
+
+    const TABELAS_PERMITIDAS = ["pessoas", "carros", "casas", "cachorros"];
+
+No inicio de cada rota, verifique se a tabela solicitada esta nessa lista. Se nao estiver, retorne um erro 400 com a mensagem "Tabela nao permitida". Teste chamando /api/sqlite_master novamente: agora deve retornar erro. Depois escreva um teste automatizado que confirme esse comportamento para garantir que ninguem vai quebrar isso acidentalmente no futuro.
 
 ### Desafio 2 — Rota GET por ID
 
